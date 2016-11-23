@@ -14218,11 +14218,9 @@ General Instrument, Semikron, Diotec, Fagor&lt;p&gt;
 <segment>
 <pinref part="Q20" gate="G$1" pin="E"/>
 <wire x1="106.68" y1="104.14" x2="109.22" y2="104.14" width="0.1524" layer="91"/>
-<pinref part="Q30" gate="G$1" pin="E"/>
-<wire x1="106.68" y1="27.94" x2="109.22" y2="27.94" width="0.1524" layer="91"/>
-<wire x1="109.22" y1="27.94" x2="109.22" y2="25.4" width="0.1524" layer="91"/>
-<wire x1="109.22" y1="27.94" x2="109.22" y2="40.64" width="0.1524" layer="91"/>
+<wire x1="109.22" y1="25.4" x2="109.22" y2="27.94" width="0.1524" layer="91"/>
 <pinref part="Q29" gate="G$1" pin="E"/>
+<wire x1="109.22" y1="27.94" x2="109.22" y2="40.64" width="0.1524" layer="91"/>
 <wire x1="109.22" y1="40.64" x2="106.68" y2="40.64" width="0.1524" layer="91"/>
 <wire x1="109.22" y1="40.64" x2="109.22" y2="53.34" width="0.1524" layer="91"/>
 <junction x="109.22" y="40.64"/>
@@ -14243,6 +14241,9 @@ General Instrument, Semikron, Diotec, Fagor&lt;p&gt;
 <wire x1="109.22" y1="104.14" x2="109.22" y2="91.44" width="0.1524" layer="91"/>
 <junction x="109.22" y="91.44"/>
 <pinref part="GND2" gate="1" pin="GND"/>
+<pinref part="Q30" gate="G$1" pin="E"/>
+<wire x1="106.68" y1="27.94" x2="109.22" y2="27.94" width="0.1524" layer="91"/>
+<junction x="109.22" y="27.94"/>
 </segment>
 <segment>
 <pinref part="C1" gate="G$1" pin="2"/>

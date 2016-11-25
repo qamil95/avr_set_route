@@ -1,3 +1,13 @@
+2016.11.25
+* Schemat odpowiada rzeczywistości w kwestii wyświetlaczy (w przeciwieństwie do wcześniejszych pasują pinowo do zakupionych) - reszta elementów niepodłączona
+* Udane podłączenie zewnętrznego zasilacza 
+* Uporządkowanie podłączenia oraz kodu wyświetlacza 
+	- port A na segmenty (segment A pin 0 -- segment G pin 6)
+	- port B na anody (piny od 0 do 4)
+	- indeks tablicy DISPLAY_TAB odpowiada pinowi podłaczonej anody
+	- wartości możliwe do wyświetlenia przechowywane w tablicy stałych
+	- kod pseudolicznika skrócony dzięki przechowywaniu wartości w tablicy
+
 2016.11.23
 * Aktualizacja danych katalogowych - pasują do zakupionych części
 * Testowe podłączenie procesora i wyświetlaczy na płytce stykowej

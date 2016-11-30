@@ -1,3 +1,9 @@
+2016.11.30
+* Ukończony schemat ideowy
+* Implementacja martycy LED w kodzie (na płytce stykowej podłączona tylko część diod, ale kod obsługuje wszystkie)
+* Podłączenie oraz implementacja klawiatury matrycowej (tymczasowo wyświetla stan przełączników na matrycy LED)
+* Sposób działania klawiatury matrycowej powoduje problemy przy wciśniętych kilku klawiszach, raczej niemożliwe do programowego obejścia - najpewniej użyję dodatkowego multipleksera który będzie obsługiwał klawiaturę bez multipleksowania programowego.
+
 2016.11.25
 * Schemat odpowiada rzeczywistości w kwestii wyświetlaczy (w przeciwieństwie do wcześniejszych pasują pinowo do zakupionych) - reszta elementów niepodłączona
 * Udane podłączenie zewnętrznego zasilacza 

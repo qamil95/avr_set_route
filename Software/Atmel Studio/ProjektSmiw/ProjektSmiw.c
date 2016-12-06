@@ -7,10 +7,11 @@
 
 #define F_CPU 8000000UL
 #include <avr/io.h>
-#include <util/delay.h>
 #include <avr/cpufunc.h> 
+#include <util/delay.h>
 
-#define delay_time 1
+
+#define delay_time 2
 
 uint8_t LED_TAB[7];
 uint8_t DISPLAY_TAB[5];
@@ -115,29 +116,12 @@ void refresh_output() {
 
 void scan_keyboard()
 {
-	for (uint8_t i = 0; i<3; i++)
-	{
-		PORTC &= ~(1<<(i+5)); //wy³¹czenie pullup rezystora
-		DDRC |= (1<<(i+5)); //i-ta grupa jako wyjscie, stan 0
-
-		_NOP(); //nop w celu synchronizacji, zalecany w datasheet
-
-		for (uint8_t j = 2; j<5; j++) //ustawienie wyjœcia na diody
-		{
-			if (!(PINC & (1<<j)))
-			{
-				LED_TAB[i] &= ~(1<<(j+2));
-			}
-			else
-			{
-				LED_TAB[i] |= (1<<(j+2));
-			}
-		}
-		
-		DDRC &= ~(1<< (i+5)); //przeskanowane, ustawienie ponownie
-		PORTC |= (1<<(i+5)); //podciagniecie do vcc
-	}
-	
+	PORTC |= (1<<PC2);
+	LED_TAB[0] = PINC >> 1;
+	PORTC &= ~(1<<PC2);
+	_NOP(); //do synchronizacji, zalecany w datasheet a bez niego nie dzia³a
+	LED_TAB[1] = PINC >> 1;
+	PORTC |= (1<<PC2);
 }
 
 int main(void)
@@ -154,7 +138,7 @@ int main(void)
 	//ustawienie wejœæ i wyjœæ
 	DDRA = 0xFF; // anoda LED na pinie 7, katody wyswietlaczy na pinach 6-0
 	DDRB = 0xFF; // anody LED na pinach 7-5, anody wyswietlaczy na pinach 4-0, 
-	DDRC = 0x03; // anody LED na pinach 1-0, piny 7-2 wejœciowe
+	DDRC = 0x07; // anody LED na pinach 1-0, pin 2 wyjœcie na select multipleksera, piny 7-3 wejœciowe
 	DDRD = 0xFF; // anoda LED na pinie 7, katody LED na pinach 6-0
 	
 	//wyzerowanie wyswietlacza
@@ -164,7 +148,6 @@ int main(void)
 	//wyzerowanie ledow
 	for (int i = 0; i<7; i++) 
 		LED_TAB[i] = 0x00;
-	
 
 	/************************************************************************/
 	/* PROGRAM - PSEUDOLICZNIK                                              */
@@ -174,6 +157,9 @@ int main(void)
     {
 		refresh_output();
 			
+		scan_keyboard();
+		
+
 		if (i<1000000)
 			i++;
 		else
@@ -186,8 +172,7 @@ int main(void)
 			numerek = numerek / 10;
 			DISPLAY_TAB[j] = DISPLAY[wart];	
 		}
-
-		scan_keyboard();		
+					
     }
 }
 

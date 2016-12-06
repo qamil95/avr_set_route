@@ -1,3 +1,6 @@
+2016.12.06
+* Dodanie multipleksera, przebudowa klawiatury
+
 2016.11.30
 * Ukończony schemat ideowy
 * Implementacja martycy LED w kodzie (na płytce stykowej podłączona tylko część diod, ale kod obsługuje wszystkie)

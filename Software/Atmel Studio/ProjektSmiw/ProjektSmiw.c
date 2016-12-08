@@ -8,11 +8,13 @@
 #define F_CPU 8000000UL
 #include <avr/io.h>
 #include <avr/cpufunc.h> 
+#include <avr/interrupt.h>
 #include <util/delay.h>
 
 
 #define delay_time 2
 
+uint16_t licznik = 0;
 uint8_t LED_TAB[7];
 uint8_t DISPLAY_TAB[5];
 const uint8_t DISPLAY[] = {
@@ -116,19 +118,69 @@ void refresh_output() {
 
 void scan_keyboard()
 {
+	for (int i = 0; i<7; i++)
+		LED_TAB[i] = 0x00;
+
 	PORTC |= (1<<PC2);
-	LED_TAB[0] = PINC >> 1;
-	PORTC &= ~(1<<PC2);
+	if (!(PINC & (1<<PC3)))
+		LED_TAB[2] = PINC >> 1;
+	else
+		LED_TAB[0] = PINC >> 1;
+        
+	PORTC &= ~(1<<PC2); //zmiana wejscia multipleksera
 	_NOP(); //do synchronizacji, zalecany w datasheet a bez niego nie dzia³a
-	LED_TAB[1] = PINC >> 1;
+	if (!(PINC & (1<<PC3)))
+		LED_TAB[3] = PINC >> 1;
+	else
+		LED_TAB[1] = PINC >> 1;
 	PORTC |= (1<<PC2);
 }
 
-int main(void)
+void int_to_display(uint16_t value)
 {
+    for (int8_t i=4; i>-1; i--)
+    {
+        DISPLAY_TAB[i] = DISPLAY[value%10];
+        value /= 10;
+    }
+}
+
+/************************************************************************/
+/* Co ile czasu ma wywolac sie przerwanie TIMER1_COMPA                  */
+/* Wartosc musi byc podzielna przez 4                                   */
+/************************************************************************/
+void set_interrupt_delay(uint16_t delay)
+{
+	if (delay %4 == 0) 
+		OCR1A = (F_CPU / 256000) * delay;
+	else
+	{
+		DISPLAY_TAB[0]=0x79;
+		DISPLAY_TAB[1]=0x50;
+		DISPLAY_TAB[2]=0x50;
+		DISPLAY_TAB[3]=0x5C;
+		DISPLAY_TAB[4]=0x50;
+		while (1)
+			refresh_output();
+	}
+}
+
+/************************************************************************/
+/* Przerwanie wywolane co czas ustawiony przez set_interrupt_delay      */
+/************************************************************************/
+ISR(TIMER1_COMPA_vect)
+{
+	licznik++;
+	if (licznik>99999)
+		licznik=0;
+}
+
+int main(void)
+{		
 	/************************************************************************/
 	/* INICJALIZACJA                                                        */
 	/************************************************************************/
+	
 	//podci¹gniêcie wszystkich pinów do VCC
 	PORTA = 0xFF;
 	PORTB = 0xFF;
@@ -147,32 +199,34 @@ int main(void)
 
 	//wyzerowanie ledow
 	for (int i = 0; i<7; i++) 
-		LED_TAB[i] = 0x00;
+		LED_TAB[i] = 0x00;		
+		
+	/************************************************************************/
+	/* USTAWIENIE ZEGARA                                                    */
+	/************************************************************************/
+	//tryb CTC
+	TCCR1B |= (1 << WGM12);
+	
+	//ustawienie jak czesto przerwanie
+	set_interrupt_delay(1000);
+		
+	//preskaler zegara T1 na 256, start licznika
+	TCCR1B |= (1<<CS12);
+	
+	//zezwolenie na przerwanie CTC A
+	TIMSK |= (1 << OCIE1A);
+	
+	//zezwolenie na przerwania w ogole
+	sei();
 
 	/************************************************************************/
-	/* PROGRAM - PSEUDOLICZNIK                                              */
-	/************************************************************************/
-	uint16_t i = 0;
+	/* PROGRAM                                                              */
+	/************************************************************************/	
     while(1)
     {
-		refresh_output();
-			
 		scan_keyboard();
-		
-
-		if (i<1000000)
-			i++;
-		else
-			i=0;
-
-		//petla inkrementacji wyswietlacza
-		uint16_t numerek = i;
-		for (int8_t j = 4; j>=0; j--) {
-			uint8_t wart = numerek % 10;
-			numerek = numerek / 10;
-			DISPLAY_TAB[j] = DISPLAY[wart];	
-		}
-					
+		refresh_output();		
+        int_to_display(licznik);
     }
 }
 

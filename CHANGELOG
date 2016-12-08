@@ -1,3 +1,7 @@
+2016.12.08
+* Rezystory podciągające przy multiplekserze (w przeciwieństwie do procesora, 74157 nie ma podciągania wejść do VCC)
+* Przerwanie wywoływane co ustawiony okres czasu
+
 2016.12.06
 * Dodanie multipleksera, przebudowa klawiatury
 

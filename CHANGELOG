@@ -1,3 +1,9 @@
+2016.12.10
+* Zwarcie anod wyświetlaczy oraz LEDów (i tak były "softwareowo zwarte", czyli włączane w tym samym momencie)
+* Usunięcie multipleksera (przyciski bezpośrednio podłączone do zaoszczędzonych przez połączenie anod pinów) oraz rezystorów podciągających (skorzystanie z wewnętrznego pullupa atmegi)
+* Reorganizacja portów (A-katody wyświetlacza, B-anody, C-klawiatura, D-katody LEDów)
+* Dalsze porządki w kodzie, dodanie komentarzy
+
 2016.12.08
 * Rezystory podciągające przy multiplekserze (w przeciwieństwie do procesora, 74157 nie ma podciągania wejść do VCC)
 * Przerwanie wywoływane co ustawiony okres czasu

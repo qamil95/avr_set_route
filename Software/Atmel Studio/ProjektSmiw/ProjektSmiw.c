@@ -7,10 +7,8 @@
 
 #define F_CPU 8000000UL
 #include <avr/io.h>
-#include <avr/cpufunc.h> 
 #include <avr/interrupt.h>
 #include <util/delay.h>
-
 
 #define delay_time 2
 
@@ -37,116 +35,58 @@ const uint8_t DISPLAY[] = {
 	0x00,	// 16  OFF_DISPLAY
 };
 
-void set_led_ano(uint8_t i) {
-	switch (i)
-	{
-	case 0 :
-		PORTA &= ~(1<<PA7);
-		break;
-	case 1 :
-		PORTB &= ~(1<<PB7);
-		break;
-	case 2 :
-		PORTB &= ~(1<<PB6);
-		break;
-	case 3 :
-		PORTB &= ~(1<<PB5);
-		break;
-	case 4 :
-		PORTC &= ~(1<<PC1);
-		break;
-	case 5 :
-		PORTC &= ~(1<<PC0);
-		break;
-	case 6 :
-		PORTD &= ~(1<<PD7);
-		break;
-	default:
-		break;
-	}
-}
-
-void clear_led_ano(uint8_t i) {
-	switch (i)
-	{
-	case 0 :
-		PORTA |= (1<<PA7);
-		break;
-	case 1 :
-		PORTB |= (1<<PB7);
-		break;
-	case 2 :
-		PORTB |= (1<<PB6);
-		break;
-	case 3 :
-		PORTB |= (1<<PB5);
-		break;
-	case 4 :
-		PORTC |= (1<<PC1);
-		break;
-	case 5 :
-		PORTC |= (1<<PC0);
-		break;
-	case 6 :
-		PORTD |= (1<<PD7);
-		break;
-	default:
-		break;
-	}
-
-	
-}
-
+/************************************************************************/
+/* Ustawienie na diodach i wyœwietlaczu wartoœci z tablic + odœwie¿enie */
+/************************************************************************/
 void refresh_output() {
 	for (uint8_t i = 0; i<7; i++) {
 		PORTD &= 0b10000000; //wyzerowanie portu D poza najstarszym bitem - katody LED
 		LED_TAB[i] &= 0b011111111; //wyzerowanie najstarszego bitu tablicy LED
 		PORTD |= LED_TAB[i]; //suma logiczna (najstarszy bit portu + 7 m³odszych bitów tablicy)
-		set_led_ano(i); //w³¹czenie i-tej anody LED
 		if (i<5) {
 			PORTA &= 0b10000000; //wyzerowanie portu A poza najstarszym bitem - katody wyœwietlaczy
 			DISPLAY_TAB[i] &= 0b011111111; //wyzerowanie najstarszego bitu tablicy wyœwietlaczy
 			PORTA |= DISPLAY_TAB[i]; //suma logiczna (najstarszy bit portu + 7 m³odszych bitów tablicy)
-			PORTB &= (~(1<<i)); //w³¹czenie i-tej anody wyœwietlacza
 		}
+		
+		PORTB &= (~(1<<i)); //w³¹czenie i-tej anody
 		_delay_ms(delay_time); //czas œwiecenia
-		clear_led_ano(i); //wy³¹czenie i-tej anody LED
-		if (i<5) 
-			PORTB |= (1<<i); //wy³¹czenie i-tej anody wyœwietlacza	
+		PORTB |= (1<<i); //wy³¹czenie i-tej anody			
 	}	
 }
 
-void scan_keyboard()
+/************************************************************************/
+/* Funkcja wyœwietlaj¹ca integera na siedmiosegmentowcu                 */
+/* value - wartoœæ do wyœwietlenia                                      */
+/* start_seg, end_seg - zakres które segmenty maj¹ byæ wyœwietlone      */
+/************************************************************************/
+void int_to_display(uint16_t val, uint8_t start_seg, uint8_t end_seg)
 {
-	for (int i = 0; i<7; i++)
-		LED_TAB[i] = 0x00;
-
-	PORTC |= (1<<PC2);
-	if (!(PINC & (1<<PC3)))
-		LED_TAB[2] = PINC >> 1;
-	else
-		LED_TAB[0] = PINC >> 1;
-        
-	PORTC &= ~(1<<PC2); //zmiana wejscia multipleksera
-	_NOP(); //do synchronizacji, zalecany w datasheet a bez niego nie dzia³a
-	if (!(PINC & (1<<PC3)))
-		LED_TAB[3] = PINC >> 1;
-	else
-		LED_TAB[1] = PINC >> 1;
-	PORTC |= (1<<PC2);
-}
-
-void int_to_display(uint16_t value)
-{
-    for (int8_t i=4; i>-1; i--)
+    for (int8_t i=end_seg; i>start_seg-1; i--)
     {
-        DISPLAY_TAB[i] = DISPLAY[value%10];
-        value /= 10;
+        DISPLAY_TAB[i] = DISPLAY[val%10];
+        val /= 10;
     }
 }
 
 /************************************************************************/
-/* Co ile czasu ma wywolac sie przerwanie TIMER1_COMPA                  */
+/* Funkcja wywo³ywana przy b³êdach - wyœwietla ERR + kod b³êdu,         */
+/* po czym przerywa dzia³anie programu. Kody b³êdów:					*/
+/* 01 - delay przerwania licznika niepodzielny przez 4                  */
+/************************************************************************/
+void error(uint8_t error_code)
+{
+	cli();
+	DISPLAY_TAB[0]=0x79;
+	DISPLAY_TAB[1]=0x50;
+	DISPLAY_TAB[2]=0x50;
+	int_to_display(error_code, 3,4);	
+	while (1)
+		refresh_output();
+}
+
+/************************************************************************/
+/* Funkcja ustawia co ile czasu ma wywolac sie przerwanie TIMER1_COMPA  */
 /* Wartosc musi byc podzielna przez 4                                   */
 /************************************************************************/
 void set_interrupt_delay(uint16_t delay)
@@ -154,15 +94,7 @@ void set_interrupt_delay(uint16_t delay)
 	if (delay %4 == 0) 
 		OCR1A = (F_CPU / 256000) * delay;
 	else
-	{
-		DISPLAY_TAB[0]=0x79;
-		DISPLAY_TAB[1]=0x50;
-		DISPLAY_TAB[2]=0x50;
-		DISPLAY_TAB[3]=0x5C;
-		DISPLAY_TAB[4]=0x50;
-		while (1)
-			refresh_output();
-	}
+		error(01);
 }
 
 /************************************************************************/
@@ -188,10 +120,10 @@ int main(void)
 	PORTD = 0xFF;
 	
 	//ustawienie wejœæ i wyjœæ
-	DDRA = 0xFF; // anoda LED na pinie 7, katody wyswietlaczy na pinach 6-0
-	DDRB = 0xFF; // anody LED na pinach 7-5, anody wyswietlaczy na pinach 4-0, 
-	DDRC = 0x07; // anody LED na pinach 1-0, pin 2 wyjœcie na select multipleksera, piny 7-3 wejœciowe
-	DDRD = 0xFF; // anoda LED na pinie 7, katody LED na pinach 6-0
+	DDRA = 0x7F; // katody wyœwietlacza, pin7 jako wejœcie
+	DDRB = 0x7F; // wspólne anody, pin7 jako wejœcie
+	DDRC = 0x00; // klawiatura - piny wejœciowe
+	DDRD = 0x7F; // katody LED, pin7 jako wejœcie
 	
 	//wyzerowanie wyswietlacza
 	for (uint8_t i = 0; i<4; i++)
@@ -208,7 +140,7 @@ int main(void)
 	TCCR1B |= (1 << WGM12);
 	
 	//ustawienie jak czesto przerwanie
-	set_interrupt_delay(1000);
+	set_interrupt_delay(100);
 		
 	//preskaler zegara T1 na 256, start licznika
 	TCCR1B |= (1<<CS12);
@@ -220,13 +152,28 @@ int main(void)
 	sei();
 
 	/************************************************************************/
-	/* PROGRAM                                                              */
+	/* PROGRAM - g³ówna pêtla                                               */
 	/************************************************************************/	
     while(1)
     {
-		scan_keyboard();
-		refresh_output();		
-        int_to_display(licznik);
+		if (!(PIND & (1<<PD7))) //klawiatura
+		{
+			LED_TAB[0] = PINC >> 1;
+			LED_TAB[1] = PINC << 3;
+			
+		}
+		else
+		{
+			LED_TAB[2] = PINC >> 1;
+			LED_TAB[3] = PINC << 3;
+		}					
+		
+		if (!(PINA & (1<<PA7))) //niebieski przycisk do wygaszenia diod
+			for (int i = 0; i<7; i++)
+				LED_TAB[i] = 0x00;
+		
+        int_to_display(licznik,0,4);
+		refresh_output();	
     }
 }
 

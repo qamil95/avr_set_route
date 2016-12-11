@@ -10,7 +10,7 @@
 #include <avr/interrupt.h>
 #include <util/delay.h>
 
-#define delay_time 2
+#define delay_time 400
 
 uint16_t licznik = 0;
 uint8_t LED_TAB[7];
@@ -50,7 +50,7 @@ void refresh_output() {
 		}
 		
 		PORTB &= (~(1<<i)); //w³¹czenie i-tej anody
-		_delay_ms(delay_time); //czas œwiecenia
+		_delay_us(delay_time); //czas œwiecenia
 		PORTB |= (1<<i); //wy³¹czenie i-tej anody			
 	}	
 }

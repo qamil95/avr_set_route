@@ -1,3 +1,7 @@
+2016.12.11
+* Skrócony czas aktywności anody, użycie _delay_us zamiast _delay_ms
+* Dodana prezentacja
+
 2016.12.10
 * Zwarcie anod wyświetlaczy oraz LEDów (i tak były "softwareowo zwarte", czyli włączane w tym samym momencie)
 * Usunięcie multipleksera (przyciski bezpośrednio podłączone do zaoszczędzonych przez połączenie anod pinów) oraz rezystorów podciągających (skorzystanie z wewnętrznego pullupa atmegi)

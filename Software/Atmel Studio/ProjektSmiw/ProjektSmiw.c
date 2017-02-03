@@ -36,6 +36,127 @@ const uint8_t DISPLAY[] = {
 };
 
 /************************************************************************/
+/* Zapalenie LEDa o podanym ID                                          */
+/************************************************************************/
+void set_led(uint8_t id)
+{
+	switch (id)
+	{
+		case 1: LED_TAB[4] |= (1<<6);break;
+		case 2: LED_TAB[5] |= (1<<6);break;
+		case 3:	LED_TAB[1] |= (1<<6);break;
+		case 4:	LED_TAB[0] |= (1<<6);break;
+		case 5: LED_TAB[6] |= (1<<6);break;
+		case 6: LED_TAB[6] |= (1<<5);break;
+		case 7:	LED_TAB[0] |= (1<<5);break;
+		case 8:	LED_TAB[1] |= (1<<5);break;
+		case 9:	LED_TAB[2] |= (1<<5);break;
+		case 10:LED_TAB[4] |= (1<<5);break;
+		case 11:LED_TAB[3] |= (1<<5);break;
+		case 12:LED_TAB[5] |= (1<<5);break;
+		case 13:LED_TAB[3] |= (1<<6);break;
+		case 14:LED_TAB[3] |= (1<<2);break;
+		case 15:LED_TAB[0] |= (1<<2);break;
+		case 16:LED_TAB[6] |= (1<<2);break;
+		case 17:LED_TAB[5] |= (1<<2);break;
+		case 18:LED_TAB[6] |= (1<<3);break;
+		case 19:LED_TAB[0] |= (1<<3);break;
+		case 20:LED_TAB[3] |= (1<<3);break;
+		case 21:LED_TAB[1] |= (1<<3);break;
+		case 22:LED_TAB[1] |= (1<<4);break;
+		case 23:LED_TAB[6] |= (1<<4);break;
+		case 24:LED_TAB[0] |= (1<<4);break;
+		case 25:LED_TAB[1] |= (1<<2);break;
+		case 26:LED_TAB[4] |= (1<<2);break;
+		case 27:LED_TAB[4] |= (1<<0);break;
+		case 28:LED_TAB[1] |= (1<<0);break;
+		case 29:LED_TAB[0] |= (1<<0);break;
+		case 30:LED_TAB[6] |= (1<<0);break;
+		case 31:LED_TAB[5] |= (1<<0);break;
+		case 32:LED_TAB[3] |= (1<<0);break;
+		case 33:LED_TAB[2] |= (1<<0);break;
+		case 34:LED_TAB[3] |= (1<<1);break;
+		case 35:LED_TAB[5] |= (1<<1);break;
+		case 36:LED_TAB[4] |= (1<<1);break;
+		case 37:LED_TAB[2] |= (1<<6);break;
+		case 38:LED_TAB[5] |= (1<<3);break;
+		case 39:LED_TAB[2] |= (1<<4);break;
+		case 40:LED_TAB[4] |= (1<<3);break;
+		case 41:LED_TAB[4] |= (1<<4);break;
+		case 42:LED_TAB[3] |= (1<<4);break;
+		case 43:LED_TAB[5] |= (1<<4);break;
+		case 44:LED_TAB[2] |= (1<<2);break;
+		case 45:LED_TAB[2] |= (1<<3);break;
+		case 46:LED_TAB[1] |= (1<<1);break;
+		case 47:LED_TAB[2] |= (1<<1);break;
+		case 48:LED_TAB[0] |= (1<<1);break;
+		case 49:LED_TAB[6] |= (1<<1);break;
+		default:break;
+	}	
+}
+
+/************************************************************************/
+/* Zgaszenie LEDa o podanym ID                                          */
+/************************************************************************/
+void clear_led(uint8_t id)
+{
+	switch (id)
+	{
+		case 1: LED_TAB[4] &= ~(1<<6);break;
+		case 2: LED_TAB[5] &= ~(1<<6);break;
+		case 3:	LED_TAB[1] &= ~(1<<6);break;
+		case 4:	LED_TAB[0] &= ~(1<<6);break;
+		case 5: LED_TAB[6] &= ~(1<<6);break;
+		case 6: LED_TAB[6] &= ~(1<<5);break;
+		case 7:	LED_TAB[0] &= ~(1<<5);break;
+		case 8:	LED_TAB[1] &= ~(1<<5);break;
+		case 9:	LED_TAB[2] &= ~(1<<5);break;
+		case 10:LED_TAB[4] &= ~(1<<5);break;
+		case 11:LED_TAB[3] &= ~(1<<5);break;
+		case 12:LED_TAB[5] &= ~(1<<5);break;
+		case 13:LED_TAB[3] &= ~(1<<6);break;
+		case 14:LED_TAB[3] &= ~(1<<2);break;
+		case 15:LED_TAB[0] &= ~(1<<2);break;
+		case 16:LED_TAB[6] &= ~(1<<2);break;
+		case 17:LED_TAB[5] &= ~(1<<2);break;
+		case 18:LED_TAB[6] &= ~(1<<3);break;
+		case 19:LED_TAB[0] &= ~(1<<3);break;
+		case 20:LED_TAB[3] &= ~(1<<3);break;
+		case 21:LED_TAB[1] &= ~(1<<3);break;
+		case 22:LED_TAB[1] &= ~(1<<4);break;
+		case 23:LED_TAB[6] &= ~(1<<4);break;
+		case 24:LED_TAB[0] &= ~(1<<4);break;
+		case 25:LED_TAB[1] &= ~(1<<2);break;
+		case 26:LED_TAB[4] &= ~(1<<2);break;
+		case 27:LED_TAB[4] &= ~(1<<0);break;
+		case 28:LED_TAB[1] &= ~(1<<0);break;
+		case 29:LED_TAB[0] &= ~(1<<0);break;
+		case 30:LED_TAB[6] &= ~(1<<0);break;
+		case 31:LED_TAB[5] &= ~(1<<0);break;
+		case 32:LED_TAB[3] &= ~(1<<0);break;
+		case 33:LED_TAB[2] &= ~(1<<0);break;
+		case 34:LED_TAB[3] &= ~(1<<1);break;
+		case 35:LED_TAB[5] &= ~(1<<1);break;
+		case 36:LED_TAB[4] &= ~(1<<1);break;
+		case 37:LED_TAB[2] &= ~(1<<6);break;
+		case 38:LED_TAB[5] &= ~(1<<3);break;
+		case 39:LED_TAB[2] &= ~(1<<4);break;
+		case 40:LED_TAB[4] &= ~(1<<3);break;
+		case 41:LED_TAB[4] &= ~(1<<4);break;
+		case 42:LED_TAB[3] &= ~(1<<4);break;
+		case 43:LED_TAB[5] &= ~(1<<4);break;
+		case 44:LED_TAB[2] &= ~(1<<2);break;
+		case 45:LED_TAB[2] &= ~(1<<3);break;
+		case 46:LED_TAB[1] &= ~(1<<1);break;
+		case 47:LED_TAB[2] &= ~(1<<1);break;
+		case 48:LED_TAB[0] &= ~(1<<1);break;
+		case 49:LED_TAB[6] &= ~(1<<1);break;
+		default:break;
+
+	}
+}
+
+/************************************************************************/
 /* Ustawienie na diodach i wyœwietlaczu wartoœci z tablic + odœwie¿enie */
 /************************************************************************/
 void refresh_output() {
@@ -102,9 +223,11 @@ void set_interrupt_delay(uint16_t delay)
 /************************************************************************/
 ISR(TIMER1_COMPA_vect)
 {
+	clear_led(licznik %50);
 	licznik++;
 	if (licznik>99999)
 		licznik=0;
+	set_led(licznik %50);
 }
 
 int main(void)
@@ -156,22 +279,8 @@ int main(void)
 	/************************************************************************/	
     while(1)
     {
-		if (!(PIND & (1<<PD7))) //klawiatura
-		{
-			LED_TAB[0] = PINC >> 1;
-			LED_TAB[1] = PINC << 3;
-			
-		}
-		else
-		{
-			LED_TAB[2] = PINC >> 1;
-			LED_TAB[3] = PINC << 3;
-		}					
-		
-		if (!(PINA & (1<<PA7))) //niebieski przycisk do wygaszenia diod
-			for (int i = 0; i<7; i++)
-				LED_TAB[i] = 0x00;
-		
+		set_led(licznik);
+		clear_led(licznik-1);
         int_to_display(licznik,0,4);
 		refresh_output();	
     }

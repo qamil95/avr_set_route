@@ -1,3 +1,6 @@
+2017.02.05
+* Napisana pierwsza wersja gry, jest już grywalna ale brakuje kilku funkcji
+
 2017.02.04
 * Dodane: funkcja sprawdzająca stan diod, zmienna przechowująca stan przełączników i funkcja je odświeżająca
 * Tryb testowy, do sprawdzenia działania wszystkich diod, wyświetlaczy i przycisków

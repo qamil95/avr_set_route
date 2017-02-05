@@ -9,6 +9,7 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <util/delay.h>
+#include <stdlib.h>
 
 #define delay_time 400 //odœwie¿anie wyœwietlaczy i diod
 
@@ -16,7 +17,19 @@
 #define debugmode (!(PINB & (1<<PB7))) //tryb testowy, true jeœli SCK zwarte do masy
 #define switch_up (PINA & (1<<PA7)) //prze³¹cznik na panelu, true jeœli w górze
 
+typedef struct
+{
+	uint8_t active;
+	uint8_t destination;
+	uint8_t position;	
+} car;
+
+car cars[10]; //zmienna przechowuj¹ca wszystkie samochody
+uint8_t active_cars; //zmienna przechowuj¹ca iloœæ aktywnych pojazdów
+uint8_t failed_car = 0; //numer samochodu który spowodowa³ koniec gry
 uint16_t counter = 0;
+uint8_t interrupt_flag = 0;
+uint8_t points = 0; //wynik punktowy
 uint8_t switches = 0x00; //stan 8 prze³¹czników przy diodach
 uint8_t LED_TAB[7]; //stan ka¿dego LEDa
 uint8_t DISPLAY_TAB[5]; //stan ka¿dego wyœwietlacza
@@ -217,9 +230,9 @@ uint8_t check_led(uint8_t id)
 void refresh_switches()
 {
 	if (PINC & (1<<PC6))	switches |= (1<<0); else switches &= ~(1<<0);		
-	if (!(PINC & (1<<PC7)))	switches |= (1<<1);	else switches &= ~(1<<1);	
-	if (PINC & (1<<PC1))	switches |= (1<<2);	else switches &= ~(1<<2);		
-	if (!(PINC & (1<<PC3)))	switches |= (1<<3);	else switches &= ~(1<<3);		
+	if (!(PINC & (1<<PC7)))	switches |= (1<<1); else switches &= ~(1<<1);	
+	if (PINC & (1<<PC1))	switches |= (1<<2); else switches &= ~(1<<2);		
+	if (!(PINC & (1<<PC3)))	switches |= (1<<3); else switches &= ~(1<<3);		
 	if (!(PINC & (1<<PC2)))	switches |= (1<<4); else switches &= ~(1<<4);	
 	if (PINC & (1<<PC4))	switches |= (1<<5); else switches &= ~(1<<5);	
 	if (PIND & (1<<PD7))	switches |= (1<<6); else switches &= ~(1<<6);	
@@ -294,8 +307,10 @@ void set_interrupt_delay(uint16_t delay)
 ISR(TIMER1_COMPA_vect)
 {
 	counter++;
-	if (counter>99999)
-		counter=0;
+	if (!debugmode)
+	{
+		interrupt_flag = 1;
+	}
 }
 
 /************************************************************************/
@@ -307,7 +322,7 @@ ISR(TIMER1_COMPA_vect)
 /************************************************************************/
 void test_board()
 {
-	set_interrupt_delay(500);
+	set_interrupt_delay(400);
 	// test 1
 	counter = 0;
 	while (counter < 7)
@@ -353,86 +368,27 @@ void test_board()
 	cli();
 	while (1)
 	{
-		refresh_switches();
-		if (switches & (1<<0))
+		if (!blue_button)
 		{
-			set_led(3);
-			clear_led(37);
-		} else
+			for (uint8_t i=1; i<50; i++)
+				clear_led(i);
+				
+			refresh_switches();
+			if (switches & (1<<0)) set_led(3);  else set_led(37);			
+			if (switches & (1<<1)) set_led(18);	else set_led(38);			
+			if (switches & (1<<2)) set_led(9);  else set_led(39);			
+			if (switches & (1<<3)) set_led(21); else set_led(40);
+			if (switches & (1<<4)) set_led(28); else set_led(44);
+			if (switches & (1<<5)) set_led(19); else set_led(45);
+			if (switches & (1<<6)) set_led(22); else set_led(46);
+			if (switches & (1<<7)) set_led(34); else set_led(47);
+		}
+		else
 		{
-			set_led(37);
-			clear_led(3);
+			for (uint8_t i=1; i<50; i++)
+				set_led(i);
 		}
 		
-		if (switches & (1<<1))
-		{
-			set_led(18);
-			clear_led(38);
-		} else
-		{
-			set_led(38);
-			clear_led(18);
-		}
-			
-		if (switches & (1<<2))
-		{
-			set_led(9);
-			clear_led(39);
-		} else
-		{
-			set_led(39);
-			clear_led(9);
-		}
-			
-		if (switches & (1<<3))
-		{
-			set_led(21);
-			clear_led(40);
-		} else
-		{
-			set_led(40);
-			clear_led(21);
-		}
-		
-		if (switches & (1<<4))
-		{
-			set_led(28);
-			clear_led(44);
-		} else
-		{
-			set_led(44);
-			clear_led(28);
-		}
-		
-		if (switches & (1<<5))
-		{
-			set_led(19);
-			clear_led(45);
-		} else
-		{
-			set_led(45);
-			clear_led(19);
-		}
-		
-		if (switches & (1<<6))
-		{
-			set_led(22);
-			clear_led(46);
-		} else
-		{
-			set_led(46);
-			clear_led(22);
-		}
-		
-		if (switches & (1<<7))
-		{
-			set_led(34);
-			clear_led(47);
-		} else
-		{
-			set_led(47);
-			clear_led(34);
-		}			
 			
 		if switch_up
 		{
@@ -453,12 +409,365 @@ void test_board()
 	}
 }
 
+/************************************************************************/
+/* Przygotowanie generatora liczb pseudolosowych                        */
+/************************************************************************/
+void prepare_rand()
+{
+	uint16_t seed = switches;
+	seed |= (counter<<8);
+	srand(seed);
+}
+
+/************************************************************************/
+/* Przygotowanie gry przed startem                                      */
+/************************************************************************/
+void prepare_game()
+{	
+	uint8_t switch_up_on_start = switch_up;
+	uint8_t display = DISPLAY_TAB[1];
+	
+	if (!switch_up_on_start) //wyzerowanie p³ytki przy resecie po pauzie
+	{
+		points = 0;
+		for (int i=0; i<10; i++)
+			cars[i].active = 0;
+		for (int i=0; i<3; i++)
+			DISPLAY_TAB[i] = DISPLAY_VALUE[16];
+		for (int i=0; i<7; i++)
+			LED_TAB[i]=0x00;
+		failed_car = 0;
+	}		
+	
+	int_to_display(points, 3, 4); //wyœwietlenie punktów
+	set_interrupt_delay(200);
+	counter = 0;
+	
+	while (1)
+	{		
+		refresh_output();		
+		if (switch_up_on_start && switch_up) //miganie wyswietlacza i diody z powodem przegranej
+		{
+			if (counter%2)
+			{
+				DISPLAY_TAB[1] = display;
+				set_led(failed_car);
+			}
+			else
+			{
+				DISPLAY_TAB[1] = DISPLAY_VALUE[16];
+				clear_led(failed_car);
+			}
+		}
+		if (switch_up_on_start && (!switch_up)) //koniec migania po obni¿eniu dŸwigni
+		{
+			DISPLAY_TAB[1] = display;
+			set_led(failed_car);
+			switch_up_on_start = 0;
+			for (int i=0; i<10; i++)
+				cars[i].active = 0;
+		}			
+			
+		if ((!switch_up) && (blue_button)) //reset po wciœniêciu przycisku
+		{
+			for (int i=0; i<10; i++)
+				cars[i].active = 0;
+			for (int i=0; i<3; i++)
+				DISPLAY_TAB[i] = DISPLAY_VALUE[16];
+			for (int i=0; i<7; i++)
+				LED_TAB[i]=0x00;
+			failed_car = 0;
+			points = 0;
+			int_to_display(points, 3, 4);					
+		}			
+			
+		if (switch_up && !switch_up_on_start && (points == 0)) //start gry
+			return;
+	}	
+}
+
+/************************************************************************/
+/* Wyœwietlenie animacji startowej                                      */
+/************************************************************************/
+void startup_animation()
+{
+	set_interrupt_delay(80);
+	counter = 0;
+		
+	while (1)
+	{
+		refresh_output();
+		if (counter == 1)
+		{
+			for (int i=0; i<3; i++)
+				DISPLAY_TAB[i] |= 0x01;
+		}
+		else if (counter == 2)
+		{
+			for (int i=0; i<3; i++)
+				DISPLAY_TAB[i] |= 0x41;
+		}
+		else if (counter == 3)
+		{
+			for (int i=0; i<3; i++)
+				DISPLAY_TAB[i] |= 0x49;
+		}
+		else if ((counter > 3) && (counter<16))
+		{
+			
+			set_led(counter-3);
+			set_led(12+counter-3);
+			set_led(24+counter-3);
+		}
+		else if (counter == 20)
+		{
+			for (int i=0; i<3; i++)
+				DISPLAY_TAB[i] = 0x48;
+		}
+		else if (counter == 21)
+		{
+			for (int i=0; i<3; i++)
+				DISPLAY_TAB[i] = 0x08;
+		}
+		else if (counter == 22)
+		{
+			for (int i=0; i<3; i++)
+				DISPLAY_TAB[i] = 0x00;
+		}
+		else if ((counter > 22) && (counter < 40))
+		{
+			clear_led(counter-22);
+			clear_led(12+counter-22);
+			clear_led(24+counter-22);
+		}
+		else if (counter > 40)
+			return;		
+	}	
+}
+
+/************************************************************************/
+/* Przesuniêcie pojazdów jedno pole do przodu                           */
+/************************************************************************/
+int proceed_cars()
+{
+	for (int i=0; i<10; i++)
+		if (cars[i].active)
+		{
+			clear_led(cars[i].position);
+			refresh_switches();
+			switch (cars[i].position)
+			{
+				//trzeci rz¹d, zgaszenie wyœwietlaczy
+				case 3:
+					DISPLAY_TAB[0] = DISPLAY_VALUE[16];
+					cars[i].position++;
+					break;				
+				case 15:
+					DISPLAY_TAB[1] = DISPLAY_VALUE[16];
+					cars[i].position++;
+					break;
+				//case 27: jest jednoczeœnie skrzy¿owaniem
+				//case 37: tak samo
+					
+				//ostatni rz¹d, sprawdzenie czy dobry cel
+				case 12:
+				case 24:
+				case 36:
+				case 43:
+				case 49:
+					cars[i].active=0; 
+					active_cars--;
+					if (cars[i].destination-100 != cars[i].position) //jeœli z³y cel koniec gry
+					{
+						set_led(cars[i].position);
+						failed_car = cars[i].position;
+						DISPLAY_TAB[0]=0x00;
+						DISPLAY_TAB[2]=0x00;						
+						switch (cars[i].destination)
+						{
+							case 112: DISPLAY_TAB[1] = DISPLAY_VALUE[10]; break;
+							case 143: DISPLAY_TAB[1] = DISPLAY_VALUE[11]; break;
+							case 124: DISPLAY_TAB[1] = DISPLAY_VALUE[12]; break;
+							case 149: DISPLAY_TAB[1] = DISPLAY_VALUE[13]; break;
+							case 136: DISPLAY_TAB[1] = DISPLAY_VALUE[14]; break;
+						}
+						return 0;
+					}						
+					else //jeœli dobry cel dodanie punktu
+						points++;
+						break;
+						
+				//przed pojawieniem siê pojazdu, tylko wyœwietlacz pokazuje cel
+				case 100:
+				case 101:
+				case 102:
+					cars[i].position += 100;
+					break;
+				case 200:
+					cars[i].position = 1;
+					break;
+				case 201:
+					cars[i].position = 13;
+					break;
+				case 202:
+					cars[i].position = 25;
+					break;
+					
+				//skrzy¿owania
+				case 2:
+					if (switches & (1<<0))
+						cars[i].position++;
+					else
+						cars[i].position = 37;
+					break;
+				case 17:
+					if (switches & (1<<1))
+						cars[i].position++;
+					else
+						cars[i].position = 38;
+					break;
+				case 8:
+					if (switches & (1<<2))
+						cars[i].position++;
+					else
+						cars[i].position = 39;
+					break;
+				case 20:
+					if (switches & (1<<3))
+						cars[i].position++;
+					else
+						cars[i].position = 40;
+					break;
+				case 27:
+					DISPLAY_TAB[2] = DISPLAY_VALUE[16]; //wygaszenie bo to trzeci rz¹d
+					if (switches & (1<<4))
+						cars[i].position++;
+					else
+						cars[i].position = 44;
+					break;
+				case 18:
+					if (switches & (1<<5))
+						cars[i].position++;
+					else
+						cars[i].position = 45;
+					break;
+				case 21:
+					if (switches & (1<<6))
+						cars[i].position++;
+					else
+						cars[i].position = 46;
+					break;			
+				case 33:
+					if (switches & (1<<7))
+						cars[i].position++;
+					else
+						cars[i].position = 47;
+					break;		
+										
+				//z³¹czenia po skrzy¿owaniach
+				case 37:
+					DISPLAY_TAB[0] = DISPLAY_VALUE[16]; //bo trzeci rz¹d
+					cars[i].position = 16;
+					break;
+				case 38:
+					cars[i].position = 7;
+					break;
+				case 39:
+					cars[i].position = 41;
+					break;
+				case 44:
+					cars[i].position = 17;
+					break;
+				case 45:
+					cars[i].position = 32;
+					break;
+				case 46:
+					cars[i].position = 48;
+					break;
+				
+				//dowolna inna pozycja, przejœcie pole ni¿ej
+				default:
+					cars[i].position++;
+			}
+			if (cars[i].active)
+				set_led(cars[i].position);
+		}
+		return 1;
+}
+
+/************************************************************************/
+/* Utworzenie nowego pojazdu                                            */
+/************************************************************************/
+void create_new_car()
+{
+	int i=0;
+	while (1)
+	{
+		if (!cars[i].active) //wyszukanie pierwszego nieaktywnego pojazdu i aktywacja
+		{
+			cars[i].active = 1; //1-aktywny, 0-nieaktywny
+			cars[i].position = (rand() %3)+100; //pozycja startowa, +100 bo start na wyœwietlaczu
+			cars[i].destination = (rand() %5); //wylosowanie celu
+			DISPLAY_TAB[cars[i].position-100] = DISPLAY_VALUE[cars[i].destination+10]; //wyœwietlenie celu
+			switch (cars[i].destination) //przemiana celu na pole do którego ma trafiæ +100
+			{
+				case 0: cars[i].destination = 112; break;
+				case 1: cars[i].destination = 143; break;
+				case 2: cars[i].destination = 124; break;
+				case 3: cars[i].destination = 149; break;
+				case 4: cars[i].destination = 136; break;
+			}			
+			return;
+		}
+		else
+			i++;
+	}
+}
+
+/************************************************************************/
+/* Pêtla g³ówna gry                                                     */
+/************************************************************************/
+void play_game()
+{
+	set_interrupt_delay(2000); //co 2 sekundy, wartoœæ startowa
+	interrupt_flag = 0;
+	counter = 0;	
+	
+	while(1)
+	{		
+		active_cars = 0; //przeliczenie aktywnych pojazdów
+		for (int i=0; i<10; i++)
+			if (cars[i].active)
+				active_cars++;
+			
+		if (interrupt_flag)
+		{			
+			if (!proceed_cars()) //jeœli false znaczy ¿e przegrana
+			{
+				int_to_display(points,3,4);
+				return;
+			}				
+			if ((active_cars<=10) && ((active_cars == 0) || (counter % 5 == 0))) //wygenerowanie nowego auta
+			{
+				create_new_car();
+				active_cars++;
+			}			
+			interrupt_flag = 0;
+		}	
+		
+		int_to_display(points,3,4);
+		refresh_output();
+		//dŸwignia ma pauzowaæ i wznawiaæ grê
+		//niebieski button ma robiæ reset w trakcie pauzy
+		//dodaæ zwiêkszanie poziomu trudnoœci
+	}
+}
+
+/************************************************************************/
+/* FUNKCJA MAIN                                                         */
+/************************************************************************/
 int main(void)
 {		
-	/************************************************************************/
-	/* INICJALIZACJA                                                        */
-	/************************************************************************/
-	
 	//podci¹gniêcie wszystkich pinów do VCC
 	PORTA = 0xFF;
 	PORTB = 0xFF;
@@ -479,14 +788,11 @@ int main(void)
 	for (int i = 0; i<7; i++) 
 		LED_TAB[i] = 0x00;		
 		
-	/************************************************************************/
-	/* USTAWIENIE ZEGARA                                                    */
-	/************************************************************************/
-	//tryb CTC
+	//zegar - tryb CTC
 	TCCR1B |= (1 << WGM12);
 	
-	//ustawienie jak czesto przerwanie
-	set_interrupt_delay(100);
+	//zegar - ustawienie jak czesto przerwanie
+	set_interrupt_delay(4);
 		
 	//preskaler zegara T1 na 256, start licznika
 	TCCR1B |= (1<<CS12);
@@ -497,19 +803,22 @@ int main(void)
 	//zezwolenie na przerwania w ogole
 	sei();
 	
-	/************************************************************************/
-	/* Aktywacja trybu testowego jeœli SCK zwarte do masy                   */
-	/************************************************************************/
+	//tryb testowy jeœli SCK zwarte do masy
 	if debugmode
-		test_board();
-	else
-	/************************************************************************/
-	/* PROGRAM - g³ówna pêtla                                               */
-	/************************************************************************/	
-    while(1)
-    {
-		int_to_display(counter,0,4);
-		refresh_output();		
-    }
+		test_board();	
+	
+	//przygotowanie do gry
+	prepare_game();
+	
+	//ustawienie generatora liczb pseudolosowych przy pierwszym starcie
+	prepare_rand();
+	
+	//g³ówna pêtla
+	while (1)
+	{
+		startup_animation();
+		play_game();
+		prepare_game();
+	}	
 }
 

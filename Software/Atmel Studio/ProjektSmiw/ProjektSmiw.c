@@ -25,7 +25,6 @@ typedef struct
 } car;
 
 car cars[10]; //zmienna przechowuj¹ca wszystkie samochody
-uint8_t active_cars; //zmienna przechowuj¹ca iloœæ aktywnych pojazdów
 uint8_t failed_car = 0; //numer samochodu który spowodowa³ koniec gry
 uint16_t counter = 0;
 uint8_t interrupt_flag = 0;
@@ -557,17 +556,16 @@ int proceed_cars()
 			refresh_switches();
 			switch (cars[i].position)
 			{
-				//trzeci rz¹d, zgaszenie wyœwietlaczy
-				case 3:
-					DISPLAY_TAB[0] = DISPLAY_VALUE[16];
-					cars[i].position++;
-					break;				
-				case 15:
+				//drugi rz¹d, zgaszenie wyœwietlaczy
+				//case 2: jednoczeœnie skrzy¿owanie
+				case 14:
 					DISPLAY_TAB[1] = DISPLAY_VALUE[16];
 					cars[i].position++;
 					break;
-				//case 27: jest jednoczeœnie skrzy¿owaniem
-				//case 37: tak samo
+				case 26: 
+					DISPLAY_TAB[2] = DISPLAY_VALUE[16];
+					cars[i].position++;
+					break;
 					
 				//ostatni rz¹d, sprawdzenie czy dobry cel
 				case 12:
@@ -576,7 +574,6 @@ int proceed_cars()
 				case 43:
 				case 49:
 					cars[i].active=0; 
-					active_cars--;
 					if (cars[i].destination-100 != cars[i].position) //jeœli z³y cel koniec gry
 					{
 						set_led(cars[i].position);
@@ -615,6 +612,7 @@ int proceed_cars()
 					
 				//skrzy¿owania
 				case 2:
+					DISPLAY_TAB[0] = DISPLAY_VALUE[16]; //wygaszenie bo drugi rz¹d
 					if (switches & (1<<0))
 						cars[i].position++;
 					else
@@ -639,7 +637,6 @@ int proceed_cars()
 						cars[i].position = 40;
 					break;
 				case 27:
-					DISPLAY_TAB[2] = DISPLAY_VALUE[16]; //wygaszenie bo to trzeci rz¹d
 					if (switches & (1<<4))
 						cars[i].position++;
 					else
@@ -666,7 +663,6 @@ int proceed_cars()
 										
 				//z³¹czenia po skrzy¿owaniach
 				case 37:
-					DISPLAY_TAB[0] = DISPLAY_VALUE[16]; //bo trzeci rz¹d
 					cars[i].position = 16;
 					break;
 				case 38:
@@ -705,8 +701,11 @@ void create_new_car()
 	{
 		if (!cars[i].active) //wyszukanie pierwszego nieaktywnego pojazdu i aktywacja
 		{
-			cars[i].active = 1; //1-aktywny, 0-nieaktywny
-			cars[i].position = (rand() %3)+100; //pozycja startowa, +100 bo start na wyœwietlaczu
+			cars[i].active = 1; //1-aktywny, 0-nieaktywny			
+			do 
+			{
+				cars[i].position = (rand() %3)+100; //pozycja startowa, +100 bo start na wyœwietlaczu
+			} while (DISPLAY_TAB[cars[i].position-100] != 0x00); //punkt startu musi byæ wolny
 			cars[i].destination = (rand() %5); //wylosowanie celu
 			DISPLAY_TAB[cars[i].position-100] = DISPLAY_VALUE[cars[i].destination+10]; //wyœwietlenie celu
 			switch (cars[i].destination) //przemiana celu na pole do którego ma trafiæ +100
@@ -731,35 +730,77 @@ void play_game()
 {
 	set_interrupt_delay(2000); //co 2 sekundy, wartoœæ startowa
 	interrupt_flag = 0;
-	counter = 0;	
+	counter = 3;	
 	
 	while(1)
-	{		
-		active_cars = 0; //przeliczenie aktywnych pojazdów
-		for (int i=0; i<10; i++)
-			if (cars[i].active)
-				active_cars++;
-			
-		if (interrupt_flag)
+	{					
+		if (interrupt_flag && switch_up) //przerwanie i brak pauzy, czyli aktualizacja gry
 		{			
 			if (!proceed_cars()) //jeœli false znaczy ¿e przegrana
 			{
 				int_to_display(points,3,4);
 				return;
 			}				
-			if ((active_cars<=10) && ((active_cars == 0) || (counter % 5 == 0))) //wygenerowanie nowego auta
-			{
+			if (counter %4 == 0) //wygenerowanie nowego auta
 				create_new_car();
-				active_cars++;
-			}			
-			interrupt_flag = 0;
+			interrupt_flag = 0; //reset flagi przerwañ
 		}	
 		
+		if (!switch_up) //jeœli pauza to trzymamy flage i licznik wyzerowane
+		{
+			interrupt_flag = 0;
+			counter = 0;
+		}
+			
+			
+		if ((!switch_up) && blue_button) //jeœli pauza i wciœniemy guzik
+			return;			
+			
+		switch (points)
+		{
+			case 3:
+				set_interrupt_delay(1800);
+				break;
+			case 5:
+				set_interrupt_delay(1600);
+				break;
+			case 7:
+				set_interrupt_delay(1400);
+				break;
+			case 9:
+				set_interrupt_delay(1200);
+				break;
+			case 11:
+				set_interrupt_delay(1000);
+				break;
+			case 13:
+				set_interrupt_delay(900);
+				break;
+			case 15:
+				set_interrupt_delay(800);
+				break;
+			case 20:
+				set_interrupt_delay(700);
+				break;
+			case 25:
+				set_interrupt_delay(600);
+				break;
+			case 30:	
+				set_interrupt_delay(500);
+				break;
+			case 40:
+				set_interrupt_delay(400);
+				break;
+			case 50:
+				set_interrupt_delay(300);
+				break;
+			case 60:
+				set_interrupt_delay(200);
+				break;
+		}
+			
 		int_to_display(points,3,4);
 		refresh_output();
-		//dŸwignia ma pauzowaæ i wznawiaæ grê
-		//niebieski button ma robiæ reset w trakcie pauzy
-		//dodaæ zwiêkszanie poziomu trudnoœci
 	}
 }
 
